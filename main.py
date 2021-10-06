@@ -13,9 +13,10 @@ gardenIdx, gardenGit = garden.index, garden.index
 gardener = Actor(CONFIG['Account']['name'], CONFIG['Account']['email'])
 
 
-def commitOnDatetime(dateTime):
+def commitOnDatetime(dateTime, commits = 1):
     print(f"{dateTime.year}-{dateTime.month}-{dateTime.day}: Marked")
-    gardenIdx.commit("message", author=gardener, committer=gardener,
+    for i in range(commits):
+        gardenIdx.commit("message", author=gardener, committer=gardener,
                      author_date=dateTime.isoformat(), commit_date=dateTime.isoformat())
 
 
@@ -23,12 +24,11 @@ def fillTwoYears(commits=1):
     thisYear = datetime.today().year
     DtCursor = datetime(thisYear-1, 1, 1, 12, 0, 0)
     while (DtCursor.year, DtCursor.month, DtCursor.day) != (thisYear, 12, 31):
-        for i in range(commits):
-            commitOnDatetime(DtCursor)
+        commitOnDatetime(DtCursor)
         DtCursor += timedelta(days=1)
 
 
-def fillWithLetters():
+def fillWithLetters(commits = 1):
     def transposeAndFlatten(arr):
         return chain(*[list(x) for x in zip(*arr)])
 
@@ -46,16 +46,18 @@ def fillWithLetters():
     convertedLetterLst = convertedLetter.split('\n')
     convertedLetterLst[-1] = ' '*len(convertedLetterLst[0])
     DtCursor = datetime.today()
-    DtCursor = DtCursor.replace(DtCursor.year-1, hour=12,
+    DtCursor = DtCursor.replace(hour=12,
                                 minute=0, second=0, microsecond=0)
     DtCursor -= timedelta(days=DtCursor.weekday())
+    DtCursor -= timedelta(weeks=51)
 
     markers = transposeAndFlatten(convertedLetterLst)
     for m in markers:
         if m == '#':
-            commitOnDatetime(DtCursor)
+            commitOnDatetime(DtCursor, commits)
         DtCursor += timedelta(days=1)
 
 
 if __name__ == '__main__':
-    fillWithLetters()
+    fillTwoYears()
+    fillWithLetters(5)
