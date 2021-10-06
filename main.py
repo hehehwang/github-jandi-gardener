@@ -1,63 +1,107 @@
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from itertools import chain
+from typing import List, Tuple, Union
 
 from git import Actor, Repo
 from pyfiglet import Figlet
-from configparser import ConfigParser
-
-CONFIG = ConfigParser()
-CONFIG.read('config.ini')
-
-garden = Repo('./garden')
-gardenIdx, gardenGit = garden.index, garden.index
-gardener = Actor(CONFIG['Account']['name'], CONFIG['Account']['email'])
 
 
-def commitOnDatetime(dateTime, commits = 1):
-    print(f"{dateTime.year}-{dateTime.month}-{dateTime.day}: Marked")
-    for i in range(commits):
-        gardenIdx.commit("message", author=gardener, committer=gardener,
-                     author_date=dateTime.isoformat(), commit_date=dateTime.isoformat())
+class JandiManager:
+    def __init__(self,
+                 repositoryDirectory: str,
+                 accountName: str,
+                 accountEmail: str) -> None:
+        self.garden = Repo(repositoryDirectory)
+        self.gardenIdx = self.garden.index
+        self.gardener = Actor(accountName, accountEmail)
 
+    def _commitOnDate(self, date: date, repeat: int) -> bool:
+        print(f"made commit on: {date.year}-{date.month}-{date.day}")
+        dateTimeCursor = datetime(date.year, date.month, date.day, 12)
+        for _ in range(repeat):
+            self.gardenIdx.commit("jandi by jandi manager",
+                                  author=self.gardener,
+                                  committer=self.gardener,
+                                  author_date=dateTimeCursor.isoformat(),
+                                  commit_date=dateTimeCursor.isoformat())
+        return True
 
-def fillTwoYears(commits=1):
-    thisYear = datetime.today().year
-    DtCursor = datetime(thisYear-1, 1, 1, 12, 0, 0)
-    while (DtCursor.year, DtCursor.month, DtCursor.day) != (thisYear, 12, 31):
-        commitOnDatetime(DtCursor)
-        DtCursor += timedelta(days=1)
+    def _fillJandiByDatePeriod(self, fromDate: Union[date, str, Tuple[int, int, int]],
+                               toDate: Union[date, str, Tuple[int, int, int]],
+                               repeatCommit: int = 1) -> bool:
+        if type(fromDate) == type(toDate) == 'str':
+            try:
+                fromDate, toDate = map(date.fromisoformat, (fromDate, toDate))
+            except ValueError:
+                try:
+                    fromDate, toDate = map(date.fromtimestamp, (fromDate, toDate))
+                except ValueError:
+                    print(f"ERROR: Invalid date format: {fromDate}, {toDate}")
+                    return False
 
+        elif type(fromDate) == type(toDate) == 'tuple':
+            try:
+                fromDate, toDate = map(lambda x: date(*x), (fromDate, toDate))
+            except ValueError:
+                print(f"ERROR: Invalid date format: {fromDate}, {toDate}")
+                return False
 
-def fillWithLetters(commits = 1):
-    def transposeAndFlatten(arr):
-        return chain(*[list(x) for x in zip(*arr)])
+        if toDate < fromDate:
+            print(
+                f"ERROR: fromDate should be earlier than toDate: {fromDate}, {toDate}")
+            return False
+        dateCursor = fromDate
+        while dateCursor <= toDate:
+            self._commitOnDate(dateCursor, repeatCommit)
+            dateCursor += timedelta(days=1)
+        return True
 
-    converter = Figlet(font='3x5')
-    while 1:
-        letter = input('Write a letters (1~13 length): ')
-        if 0 < len(letter) <= 13:
-            convertedLetter = converter.renderText(letter)
-            print("Confirm your sentence: ")
-            print(convertedLetter)
-            yesOrNo = input("[Y]/N ")
-            if yesOrNo in {'Y', 'y', ''}:
-                break
+    def fillThisYear(self, repeatCommit: int = 1) -> bool:
+        today = date.today()
+        fromDate, toDate = today.replace(
+            month=1, day=1), today.replace(month=12, day=31)
+        return self._fillJandiByDatePeriod(fromDate, toDate, repeatCommit)
 
-    convertedLetterLst = convertedLetter.split('\n')
-    convertedLetterLst[-1] = ' '*len(convertedLetterLst[0])
-    DtCursor = datetime.today()
-    DtCursor = DtCursor.replace(hour=12,
-                                minute=0, second=0, microsecond=0)
-    DtCursor -= timedelta(days=DtCursor.weekday())
-    DtCursor -= timedelta(weeks=51)
+    def fillOneyearFromToday(self, repeatCommit: int = 1) -> bool:
+        today = date.today()
+        fromDate, toDate = today - timedelta(weeks=52), today
+        return self._fillJandiByDatePeriod(fromDate, toDate, repeatCommit)
 
-    markers = transposeAndFlatten(convertedLetterLst)
-    for m in markers:
-        if m == '#':
-            commitOnDatetime(DtCursor, commits)
-        DtCursor += timedelta(days=1)
+    def fillWithString(self, string: str, repeatCommit: int = 1) -> bool:
+        def transposeAndFlatten(arr: List[str]):
+            return chain(*[list(x) for x in zip(*arr)])
+
+        if not 1 <= len(string) <= 12:
+            print("ERROR: length of string should be 1~12")
+            return False
+
+        try:
+            string.encode('ascii')
+        except UnicodeEncodeError:
+            print("ERROR: all character of string should be ascii format")
+            return False
+
+        stringToAscii = Figlet(font='3x5')
+        convertedString = stringToAscii.renderText(string)
+        print(convertedString)
+        convertedStringList = convertedString.split('\n')
+        # making height of converted string into 7
+        convertedStringList[-1] = ' ' * len(convertedStringList[0])
+        markers = transposeAndFlatten(convertedStringList)
+
+        dateCursor = date.today()
+        dateCursor -= (timedelta(weeks=51) + timedelta(dateCursor.weekday()))
+
+        for marker in markers:
+            if marker == '#':
+                self._commitOnDate(dateCursor, repeatCommit)
+            dateCursor += timedelta(days=1)
+
+        return True
 
 
 if __name__ == '__main__':
-    fillTwoYears()
-    fillWithLetters(5)
+    jandi = JandiManager('./jandi', 'heheHwang', 'hehe@hwang.com')
+    jandi.fillOneyearFromToday()
+    jandi.fillThisYear()
+    jandi.fillWithString('abc')
