@@ -62,7 +62,7 @@ class JandiManager:
             month=1, day=1), today.replace(month=12, day=31)
         return self._fillJandiByDatePeriod(fromDate, toDate, repeatCommit)
 
-    def fillOneyearFromToday(self, repeatCommit: int = 1) -> bool:
+    def fillOneYearFromToday(self, repeatCommit: int = 1) -> bool:
         today = date.today()
         fromDate, toDate = today - timedelta(weeks=52), today
         return self._fillJandiByDatePeriod(fromDate, toDate, repeatCommit)
@@ -102,6 +102,6 @@ class JandiManager:
 
 if __name__ == '__main__':
     jandi = JandiManager('./jandi', 'heheHwang', 'hehe@hwang.com')
-    jandi.fillOneyearFromToday()
+    jandi.fillOneYearFromToday()
     jandi.fillThisYear()
     jandi.fillWithString('abc')
