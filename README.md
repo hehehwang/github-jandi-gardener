@@ -13,11 +13,17 @@ from githubJandi import JandiManager
 
 # 대상 폴더, 깃헙 계정명, 깃헙 이메일
 jandi = JandiManager('./jandi', 'heheHwang', 'hehe@hwang.com')
-# 오늘을 기준으로 1년 기간을 커밋 1개씩 채운다.
+# 오늘을 기준으로 1년 기간에 커밋 1개씩 채운다.
 jandi.fillOneYearFromToday()
-# 올해(1.1. ~ 12.31.)에 해당하는 기간을 커밋 2개씩 채운다.
+# 올해(1.1. ~ 12.31.)에 해당하는 기간에 커밋 2개씩 채운다.
 jandi.fillThisYear(2)
 # 왼쪽부터 커밋으로 글씨를 새긴다.
+# 예시:
+#    # # # #  #  ###  ## 
+#    # # # # # # # # #   
+#    ### ### ### # # # # 
+#    # # ### # # # # # # 
+#    # # # # # # # #  ##
 # (최대 12글자, 대문자 사용 권장)
 jandi.fillWithString('ABC')
 ```
